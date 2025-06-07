@@ -1,14 +1,13 @@
 pipeline {
-    agent any
-
-    environment {
-        MAVEN_HOME = '/opt/maven'
-        SONARQUBE_ENV = 'SonarQube'
+    agent {
+        docker {
+            image 'maven:3.8.7-openjdk-17'
+            args '-v $HOME/.m2:/root/.m2'
+        }
     }
 
-    tools {
-        maven 'Maven 3.8.7'
-        jdk 'JDK 17'
+    environment {
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     stages {
@@ -18,7 +17,7 @@ pipeline {
             }
         }
 
-        stage('Compile') {
+        stage('Build') {
             steps {
                 sh 'mvn clean compile'
             }
@@ -28,28 +27,30 @@ pipeline {
             steps {
                 sh 'mvn test'
             }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
         }
 
         stage('Code Coverage') {
             steps {
-                sh 'mvn jacoco:prepare-agent test jacoco:report'
+                sh 'mvn jacoco:report'
             }
-            post {
-                always {
-                    publishHTML([reportDir: 'target/site/jacoco', reportFiles: 'index.html', reportName: 'Code Coverage'])
-                }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                junit '**/target/surefire-reports/*.xml'
             }
         }
 
         stage('SonarQube Analysis') {
+            environment {
+                SONAR_HOST_URL = 'http://sonarqube:9000'
+            }
             steps {
-                withSonarQubeEnv(SONARQUBE_ENV) {
-                    sh 'mvn sonar:sonar'
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                      mvn sonar:sonar \
+                        -Dsonar.login=$SONAR_TOKEN
+                    """
                 }
             }
         }
