@@ -2,7 +2,7 @@ pipeline {
     agent {
            docker {
                image 'maven:3.8.7-eclipse-temurin-17'
-               args '-v $HOME/.m2:/root/.m2 --network ci-network'
+               args '-v $HOME/.m2:/root/.m2 --network ci_network'
            }
     }
 
