@@ -1,13 +1,14 @@
 pipeline {
     agent {
-        docker {
+           docker {
                image 'maven:3.8.7-eclipse-temurin-17'
-               args '-v $HOME/.m2:/root/.m2'
+               args '-v $HOME/.m2:/root/.m2 --network ci-network'
            }
     }
 
     environment {
         SONAR_TOKEN = credentials('sonar-token')
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
 
     stages {
@@ -42,15 +43,9 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            environment {
-                SONAR_HOST_URL = 'http://sonarqube:9000'
-            }
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh """
-                      mvn sonar:sonar \
-                        -Dsonar.login=$SONAR_TOKEN
-                    """
+                    sh "mvn sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN"
                 }
             }
         }
