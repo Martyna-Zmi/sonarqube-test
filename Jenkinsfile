@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         SONAR_TOKEN = credentials('sonar-token')
-        SONAR_HOST_URL = 'http://sonarqube:9000'
+        SONAR_HOST_URL = 'http://host.docker.internal:9000'
     }
 
     stages {
